@@ -535,13 +535,13 @@ TIME_CRITICAL bool canhack_error_attack(uint32_t repeat, bool inject_error, uint
             eof_mask_brs <<= 4;
             tmp_eof_mask >>= 1;
         }
-        eof_mask_brs =- 1;
+        eof_mask_brs -= 1;      // turn the single set bit at position 4*N into a run of 4*N ones
 
         while (tmp_eof_match) {
             eof_match_brs <<= 4;
             tmp_eof_match >>= 1;
         }
-        eof_match_brs =- 1;
+        eof_match_brs -= 1;     // likewise: 4x expansion of the recessive match run (was "=- 1", a no-op assignment of -1)
     }
 
     uint8_t rx;
