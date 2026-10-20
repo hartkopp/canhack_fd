@@ -1,7 +1,50 @@
+CAN FD support (experimental)
+==============================
+
+This firmware contains an experimental extension of the CANHack toolkit that can bit-bang
+CAN FD frames (fixed bit rates: 500 kbit/s arbitration, 2 Mbit/s data). It originates from
+the bachelor thesis of Fynn Denecke (see docs/ on the classic2 branch) and is enabled by an
+extra build module file:
+
+    CANHACK_FD   (enables the CAN FD code path, the 700-bit frame buffer and the 250 MHz
+                  overclock in main.c that is required to meet the 2 Mbit/s data-phase timing)
+
+To build the FD firmware for a plain Pico + CAN transceiver (the "CANHack board", i.e. no
+MCP2517FD), create the module files in ports/rp2 and build:
+
+    $ cd ports/rp2
+    $ touch CANHACK_BOARD CANHACK_FD      # CANHACK is enabled automatically by CANHACK_BOARD
+    $ make BOARD=RPI_PICO clean
+    $ make BOARD=RPI_PICO submodules
+    $ make BOARD=RPI_PICO
+    $ cp build-RPI_PICO/firmware.uf2 fw_canhack_fd.uf2
+
+(For a CANPico board that also has the MCP2517FD controller, additionally `touch CANPICO_BOARD
+CANHACK`.)  The canis-can-sdk clone is only needed when CAN (the MCP2517FD driver) is built;
+a CANHACK_BOARD-only FD build does not require it.
+
+Important: the 250 MHz overclock runs the RP2040 outside its officially specified range. The
+core voltage is raised (VREG 1.20 V) in main.c before the clock switch to keep it stable; at
+the default 1.10 V the CPU can glitch and corrupt the hand-timed FD bit stream. The data bit
+rate is fixed at 2 Mbit/s and cannot be changed without recomputing the bit-time constants in
+canis/rp2_canhack.h.
+
+The CAN FD Python API (on the rp2.CANHack class) adds these keyword arguments:
+
+    set_frame(can_id, ..., fd=True, brs=True, esi=True)   # fd enables CAN FD; brs = 2 Mbit/s
+                                                          # data phase; esi = error state ind.
+    send_frame(...)                                       # unchanged; sends the set FD frame
+    send_janus_frame(..., sync_time_fd=31, split_time_fd=78)   # FD Janus timings (see below)
+    loopback(fd=True)
+
+See CANFD_STATUS.md in this directory for the current, verified status, the known limitations
+and a hardware bring-up / scope test plan.
+
+
 Release 2024-04-01 of the CANPico firmware
 ==========================================
 
-This is built on the v1.22.2 release of MicroPython for the Pico, 
+This is built on the v1.22.2 release of MicroPython for the Pico,
 
 - The Canis Labs CANPico board (containing a Microchip MCP2517FD CAN controller)
 - The Canis Labs CANHack board (containing just a CAN transceiver)
