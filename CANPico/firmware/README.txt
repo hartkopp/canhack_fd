@@ -9,13 +9,30 @@ extra build module file:
     CANHACK_FD   (enables the CAN FD code path, the 700-bit frame buffer and the 250 MHz
                   overclock in main.c that is required to meet the 2 Mbit/s data-phase timing)
 
-To build the FD firmware for a plain Pico + CAN transceiver (the "CANHack board", i.e. no
-MCP2517FD), create the module files in ports/rp2 and build:
+Building (recommended: the self-contained way)
+-----------------------------------------------
+MicroPython is pinned as a git submodule of this repo (CANPico/firmware/micropython,
+v1.22.2), so all build dependencies live inside the canhack_fd checkout. The build.sh
+script symlinks this firmware's files into the MicroPython rp2 port and builds -- no
+copying, and edits to src/ take effect immediately.
+
+    $ git submodule update --init CANPico/firmware/micropython   # once; fetches MicroPython
+    $ export PATH=/opt/arm-gnu-toolchain-13.3.rel1-.../bin:$PATH  # the Arm GNU toolchain
+    $ CANPico/firmware/build.sh                                  # -> CANPico/firmware/fw_canhack_RPI_PICO.uf2
+
+build.sh runs `make submodules` for you (pico-sdk, tinyusb, ...), touches the module
+markers (default CANHACK_BOARD + CANHACK_FD; CANHACK is auto-enabled), stamps the git
+hash, does a clean configure so the build timestamp is fresh, and copies out the .uf2.
+Overrides: BOARD=RPI_PICO_W, MODULES="CANPICO_BOARD CANHACK CANHACK_FD", MPY_DIR=/elsewhere.
+
+Building by hand (if you prefer the classic overlay-into-ports/rp2 flow)
+-----------------------------------------------------------------------
+Copy CMakeLists.txt, main.c, modrp2.c and canis/* into <micropython>/ports/rp2 (and
+tusb_config.h, mp_usbd_descriptor.c into shared/tinyusb, the board mpconfigboard.h into
+ports/rp2/boards/<BOARD>/), then:
 
     $ cd ports/rp2
     $ touch CANHACK_BOARD CANHACK_FD      # CANHACK is enabled automatically by CANHACK_BOARD
-    # optional: stamp the canhack_fd git hash into the firmware (reported by ch.build_info()).
-    # The build runs here in the MicroPython tree, so point git at your canhack_fd checkout:
     $ export CANHACK_FD_GITHASH="$(git -C /path/to/canhack_fd rev-parse --short HEAD)"
     $ rm -rf build-RPI_PICO               # clean configure so the build timestamp is refreshed
     $ make BOARD=RPI_PICO submodules
