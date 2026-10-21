@@ -144,6 +144,7 @@ physical pin 29, which is cleaner to trigger on).
    print(machine.freq())        # expect 250000000
    import rp2
    ch = rp2.CANHack(bit_rate=500)        # 500 kbit/s arbitration -> 2 Mbit/s data
+   print(ch.build_info())               # uname-like: git hash + build timestamp (confirm the running build)
    ```
 2. **Builder sanity (no bus needed).**
    ```python

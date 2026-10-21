@@ -14,10 +14,23 @@ MCP2517FD), create the module files in ports/rp2 and build:
 
     $ cd ports/rp2
     $ touch CANHACK_BOARD CANHACK_FD      # CANHACK is enabled automatically by CANHACK_BOARD
-    $ make BOARD=RPI_PICO clean
+    # optional: stamp the canhack_fd git hash into the firmware (reported by ch.build_info()).
+    # The build runs here in the MicroPython tree, so point git at your canhack_fd checkout:
+    $ export CANHACK_FD_GITHASH="$(git -C /path/to/canhack_fd rev-parse --short HEAD)"
+    $ rm -rf build-RPI_PICO               # clean configure so the build timestamp is refreshed
     $ make BOARD=RPI_PICO submodules
     $ make BOARD=RPI_PICO
     $ cp build-RPI_PICO/firmware.uf2 fw_canhack_fd.uf2
+
+The running firmware identifies itself (uname-like) from the Python shell:
+
+    >>> ch = rp2.CANHack(bit_rate=500)
+    >>> ch.build_info()
+    'canhack_fd g1a2b3c4 built 2026-10-21 14:59:12 UTC'
+
+(The build timestamp is captured at CMake configure time, so do the `rm -rf build-RPI_PICO`
+clean above to make sure it reflects this build. Without CANHACK_FD_GITHASH set, the hash reads
+"unknown".)
 
 (For a CANPico board that also has the MCP2517FD controller, additionally `touch CANPICO_BOARD
 CANHACK`.)  The canis-can-sdk clone is only needed when CAN (the MCP2517FD driver) is built;
