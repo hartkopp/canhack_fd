@@ -35,6 +35,12 @@ can1 = observer), all confirmed working on CAN FD:
 * `freeze_doom_loop_attack` — confirmed after the 64-bit EOF-detection fix below: on a flooded
   bus (~17 k frames/s) `repeat=50` produced a clean ~3 ms bus freeze; a large `repeat` produced a
   self-sustaining multi-second freeze. (Before the fix it had no effect on BRS frames.)
+* `send_janus_frame` — confirmed on an FD frame in the nominal (non-BRS) phase after the FD
+  sync/split fix below. Two frames `0x300 [01] 55` / `0x300 [01] 57` (a clean one-data-bit
+  difference, identical stuff-bit layout) were sent as a single Janus frame; sweeping `split_time`
+  flipped the value a fixed-sample-point receiver read between `57` (split before the sample point)
+  and `55` (split after it), with no error — the Janus effect, visible in SocketCAN. Janus in the
+  2 Mbit/s (BRS) data phase stays marginal (see limitations).
 
 ## TL;DR
 
@@ -110,13 +116,13 @@ any change there needs a scope to validate, so it is left for hardware bring-up.
 
 ## Known limitations / still open (need hardware)
 
-* **Janus attack on CAN FD** is inherently marginal: in the 2 Mbit/s phase the sync→split window
-  is only ~47 cycles, below what the thesis already found unreliable. Expect occasional
-  error-flagged Janus frames in the data phase. The classical-CAN Janus attack is unaffected.
-  NOTE: a separate argument-parsing bug that forced the FD sync/split times to the nominal
-  (50/155-cycle) values — which are longer than a whole 125-cycle fast bit, so FD Janus could not
-  work at all — was fixed in `rp2_canhack.c` (see fix 5). Re-test FD Janus on hardware before
-  judging how marginal it really is.
+* **Janus attack in the 2 Mbit/s (BRS) data phase** is inherently marginal: the sync→split window
+  is only ~47 cycles, below what the thesis already found unreliable, so a Janus bit placed in the
+  fast data field is often error-flagged. Janus on the nominal (arbitration/control, or a non-BRS
+  FD frame) part works — confirmed above. For a clean Janus the two frames must have identical
+  length AND identical stuff-bit positions, i.e. differ only in bits that do not change stuffing
+  (e.g. `0x55`/`0x57`); `0x00`/`0x57`-style pairs with different stuff layouts will be rejected.
+  The classical-CAN Janus attack is unaffected.
 * **Data-phase execution headroom.** Even at 1.20 V / 250 MHz the `send_bits` fast loop must do
   `SET_CAN_TX` + bookkeeping within 125 cycles. The nested-loop structure already minimises this;
   if the scope shows jitter on data-phase edges, that is the limit being hit.
