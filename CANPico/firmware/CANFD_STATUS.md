@@ -24,6 +24,17 @@ received **without CRC/form errors** by SocketCAN FD interfaces (500 kbit/s nomi
 On-device `print_frame()` output was also checked byte-for-byte against the independent
 reference builder and matched exactly.
 
+Attacks exercised against a cangen-generated FD BRS target frame (PCAN-USB Pro, can0 = victim,
+can1 = observer), all confirmed working on CAN FD:
+
+* `spoof_frame` — injected a same-ID frame with the attacker's payload (seen as RX on both ports).
+* `double_receive_attack` — the single target frame was received multiple times (validates the
+  BRS EOF-detection path, i.e. the `-= 1` fix).
+* `error_attack` — drove the victim's TX error counter up (ERROR-WARNING/PASSIVE); the victim's
+  FD frames then carried ESI set (`candump` `E` flag), and error frames were injected.
+* `freeze_doom_loop_attack` — needed the 64-bit EOF-detection register fix below to work on BRS
+  frames (the 9-bit mask's 4× expansion is 36 bits).
+
 ## TL;DR
 
 * The **CAN FD frame builder is correct.** The CRC-17/CRC-21, the stuff-count (SBC) field and
@@ -75,7 +86,14 @@ firmware intends to put on the wire form a valid CAN FD frame.
    attacks **on BRS CAN FD frames only**; classical-CAN and non-BRS behaviour were unaffected by
    the bug.
 
-3. **`CANPico/firmware/README.txt` — documented the `CANHACK_FD` build module.** It was present in
+3. **`CANPico/firmware/src/canis/canhack.c` — 64-bit EOF-detection register in
+   `canhack_error_attack`.** The BRS variant 4×-expands the EOF match/mask; the Freeze-Doom-Loop's
+   9-bit mask expands to 36 bits, which overflowed the old 32-bit `bitstream32` register, so the
+   attack silently missed on BRS CAN FD frames (observed: no bus freeze). Widened the register and
+   the effective mask/match to 64-bit. `error_attack` and `double_receive_attack` (masks that fit
+   in 32 bits) are unaffected.
+
+4. **`CANPico/firmware/README.txt` — documented the `CANHACK_FD` build module.** It was present in
    `CMakeLists.txt` but never written up, so the FD firmware could not be built from the docs
    alone. The build recipe for a plain Pico + transceiver is now included.
 
@@ -90,10 +108,6 @@ any change there needs a scope to validate, so it is left for hardware bring-up.
 * **Data-phase execution headroom.** Even at 1.20 V / 250 MHz the `send_bits` fast loop must do
   `SET_CAN_TX` + bookkeeping within 125 cycles. The nested-loop structure already minimises this;
   if the scope shows jitter on data-phase edges, that is the limit being hit.
-* **BRS attack masks beyond 32 bits.** The Freeze-Doom-Loop uses a 9-bit nominal EOF mask; its 4×
-  expansion (36 bits) is truncated to the 32-bit `bitstream32`. The attack still roughly detects
-  the recessive run but the match is not exact; harmless for the common attacks (error/double
-  receive) whose masks fit in 32 bits.
 
 ## Hardware bring-up / test plan
 
