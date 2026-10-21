@@ -9,6 +9,21 @@ Fixed bit rates throughout: **500 kbit/s arbitration, 2 Mbit/s data** (4× switc
 A fully Classical-CAN-equivalent feature set for CAN FD is *not* expected to be reachable with
 software bit-banging; the goals below are the maximum realistically achievable.
 
+## Hardware-validated (2026-10-21)
+
+Confirmed working on real hardware (plain Pico + transceiver, `CANHACK_BOARD` +
+`CANHACK_FD` build, firmware with the fixes below). Bit-banged CAN FD frames were
+received **without CRC/form errors** by SocketCAN FD interfaces (500 kbit/s nominal,
+2 Mbit/s data):
+
+* 8-byte BRS frame (CRC-17): `can0 123 [08] 01 02 … 08`.
+* 64-byte BRS frame (CRC-21): `candump -x` shows `RX B -` (BRS set) with all 64 bytes
+  correct — a length only CAN FD can carry, so this proves the FD format, CRC-21, the
+  64-byte data field and the 2 Mbit/s data phase end-to-end.
+
+On-device `print_frame()` output was also checked byte-for-byte against the independent
+reference builder and matched exactly.
+
 ## TL;DR
 
 * The **CAN FD frame builder is correct.** The CRC-17/CRC-21, the stuff-count (SBC) field and
