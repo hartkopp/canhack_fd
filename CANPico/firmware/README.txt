@@ -11,19 +11,20 @@ extra build module file:
 
 Building (recommended: the self-contained way)
 -----------------------------------------------
-MicroPython is pinned as a git submodule of this repo (CANPico/firmware/micropython,
-v1.22.2), so all build dependencies live inside the canhack_fd checkout. The build.sh
-script symlinks this firmware's files into the MicroPython rp2 port and builds -- no
-copying, and edits to src/ take effect immediately.
+From the repository ROOT, run ./build.sh -- see BUILDING.md for prerequisites and
+options. MicroPython is pinned as a git submodule (CANPico/firmware/micropython,
+v1.22.2), so all dependencies live inside the checkout; build.sh fetches it on first
+run, symlinks this firmware's files into the rp2 port (no copying), builds, and writes
+fw_canhack_RPI_PICO.uf2 to the repo root.
 
-    $ git submodule update --init CANPico/firmware/micropython   # once; fetches MicroPython
-    $ export PATH=/opt/arm-gnu-toolchain-13.3.rel1-.../bin:$PATH  # the Arm GNU toolchain
-    $ CANPico/firmware/build.sh                                  # -> CANPico/firmware/fw_canhack_RPI_PICO.uf2
+    $ export ARM_TOOLCHAIN_PATH=/opt/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
+    $ ./build.sh
 
-build.sh runs `make submodules` for you (pico-sdk, tinyusb, ...), touches the module
-markers (default CANHACK_BOARD + CANHACK_FD; CANHACK is auto-enabled), stamps the git
-hash, does a clean configure so the build timestamp is fresh, and copies out the .uf2.
+build.sh runs `make submodules` (pico-sdk, tinyusb, ...), enables the module markers
+(default CANHACK_BOARD + CANHACK_FD; CANHACK is auto-enabled), stamps the git hash,
+does a clean configure so the build timestamp is fresh, and copies out the .uf2.
 Overrides: BOARD=RPI_PICO_W, MODULES="CANPICO_BOARD CANHACK CANHACK_FD", MPY_DIR=/elsewhere.
+(CANPico/firmware/build.sh still works as a wrapper to the root ./build.sh.)
 
 Building by hand (if you prefer the classic overlay-into-ports/rp2 flow)
 -----------------------------------------------------------------------
