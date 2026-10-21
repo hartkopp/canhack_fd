@@ -24,6 +24,13 @@ received **without CRC/form errors** by SocketCAN FD interfaces (500 kbit/s nomi
 On-device `print_frame()` output was also checked byte-for-byte against the independent
 reference builder and matched exactly.
 
+Re-verified (no regression) on the final firmware `ch.build_info()` reports as
+`canhack_fd ff4ba12 built 2026-10-21 15:13 UTC`, after the 64-bit EOF and FD sync/split fixes
+were in: `double_receive_attack` still delivers the duplicate reception (same frame twice on can1
+with no intervening transmit), `error_attack` still flips the victim's ESI (`candump` `##5`→`##7`)
+and raises its error counter, and `spoof_frame` still injects the attacker payload
+(`200##5 1122334455667788` seen on both ports).
+
 Attacks exercised against a cangen-generated FD BRS target frame (PCAN-USB Pro, can0 = victim,
 can1 = observer), all confirmed working on CAN FD:
 
