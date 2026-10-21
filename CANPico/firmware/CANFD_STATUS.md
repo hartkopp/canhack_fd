@@ -116,13 +116,18 @@ any change there needs a scope to validate, so it is left for hardware bring-up.
 
 ## Known limitations / still open (need hardware)
 
-* **Janus attack in the 2 Mbit/s (BRS) data phase** is inherently marginal: the sync→split window
-  is only ~47 cycles, below what the thesis already found unreliable, so a Janus bit placed in the
-  fast data field is often error-flagged. Janus on the nominal (arbitration/control, or a non-BRS
-  FD frame) part works — confirmed above. For a clean Janus the two frames must have identical
-  length AND identical stuff-bit positions, i.e. differ only in bits that do not change stuffing
-  (e.g. `0x55`/`0x57`); `0x00`/`0x57`-style pairs with different stuff layouts will be rejected.
-  The classical-CAN Janus attack is unaffected.
+* **Janus attack in the 2 Mbit/s (BRS) data phase does not work on this hardware — physical limit,
+  not a code bug.** A cycle-accurate host simulation of the real `send_janus_bits` confirms the
+  fast-phase switch logic is correct: with `split_time_fd=90` the bus goes dominant → main at +31
+  → shadow at +90 within the 125-cycle fast bit, so an idealised receiver sampling at 60 % reads
+  the main value and at 75 % reads the shadow — the Janus effect. On real hardware it produces no
+  accepted frame: the sub-bit windows are only ~31 cycles (124 ns) and ~59 cycles at 250 MHz,
+  comparable to the Pico's per-iteration poll+SET overhead, so the two in-bit edges jitter and both
+  receivers reject the frame (CRC/form). This matches the thesis's own conclusion. Janus on the
+  nominal phase (arbitration/control, or a whole non-BRS FD frame) works and is confirmed above.
+  For any clean Janus the two frames must have identical length AND identical stuff-bit positions,
+  i.e. differ only in bits that do not change stuffing (e.g. `0x55`/`0x57`); pairs with different
+  stuff layouts (`0x00`/`0xFF`) are rejected. The classical-CAN Janus attack is unaffected.
 * **Data-phase execution headroom.** Even at 1.20 V / 250 MHz the `send_bits` fast loop must do
   `SET_CAN_TX` + bookkeeping within 125 cycles. The nested-loop structure already minimises this;
   if the scope shows jitter on data-phase edges, that is the limit being hit.
