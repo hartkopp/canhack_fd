@@ -136,10 +136,13 @@ if (EXISTS CANHACK_FD)
         set(CANHACK_FD_GITHASH "unknown")
     endif()
     message(STATUS "CANHACK_FD build ${CANHACK_FD_BUILD_UTC} UTC  git ${CANHACK_FD_GITHASH}")
+    # Write the stamp into a generated header (CMAKE_BINARY_DIR is already on the include
+    # path). This avoids passing a string with spaces through a -D compiler flag.
+    file(WRITE ${CMAKE_BINARY_DIR}/canhack_fd_build.h
+        "#define CANHACK_FD_BUILD_UTC \"${CANHACK_FD_BUILD_UTC}\"\n#define CANHACK_FD_GITHASH \"${CANHACK_FD_GITHASH}\"\n")
     target_compile_definitions(${MICROPY_TARGET} PRIVATE
         CANHACK_FD=1
-        CANHACK_FD_BUILD_UTC="${CANHACK_FD_BUILD_UTC}"
-        CANHACK_FD_GITHASH="${CANHACK_FD_GITHASH}"
+        CANHACK_FD_HAVE_BUILD_H=1
     )
 endif()
 
