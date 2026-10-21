@@ -764,6 +764,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(rp2_canhack_send_raw_obj, rp2_canhack_send_raw)
 // Report the firmware build stamp and canhack_fd git hash (uname-like), e.g.
 //   >>> ch.build_info()
 //   'canhack_fd g1a2b3c4 built 2026-10-21 14:59:12 UTC'
+#ifdef CANHACK_FD_HAVE_BUILD_H
+#include "canhack_fd_build.h"
+#endif
 #ifndef CANHACK_FD_BUILD_UTC
 #define CANHACK_FD_BUILD_UTC "unknown"
 #endif
