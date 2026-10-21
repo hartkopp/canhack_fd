@@ -37,10 +37,24 @@ directory (its `bin/` is prepended to `PATH` for the build):
 export ARM_TOOLCHAIN_PATH=/opt/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi
 ```
 
-Check it resolves and has newlib:
+Note: `export ARM_TOOLCHAIN_PATH=…` only sets the variable — it does **not** change your
+interactive shell's `PATH`. `build.sh` prepends `$ARM_TOOLCHAIN_PATH/bin` to `PATH`
+itself, so it uses that toolchain even if a different `arm-none-eabi-gcc` (e.g. a newer
+distro one) comes first in your shell. Running `arm-none-eabi-gcc --version` by hand may
+therefore still show the other version — that is fine. Confirm the build uses the right
+one by watching the line build.sh prints:
+
+```
+>> toolchain   : /opt/arm-gnu-toolchain-13.3.rel1-.../bin/arm-none-eabi-gcc  (13.3.1)
+```
+
+It must say **13.3.x**. The firmware does **not** build with arm-none-eabi-gcc 15+. If
+you also want your interactive shell to use it (for manual checks):
 
 ```sh
-arm-none-eabi-gcc --version                       # should say 13.3.x
+export PATH=$ARM_TOOLCHAIN_PATH/bin:$PATH
+hash -r
+arm-none-eabi-gcc --version                       # now 13.3.x
 arm-none-eabi-gcc -print-file-name=nosys.specs    # must print a full path, not just "nosys.specs"
 ```
 
