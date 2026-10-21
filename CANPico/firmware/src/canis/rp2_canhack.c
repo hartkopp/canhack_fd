@@ -445,8 +445,8 @@ STATIC mp_obj_t rp2_canhack_send_janus_frame(mp_uint_t n_args, const mp_obj_t *p
     // Default to fractions of a bit time: 0-25% = sync time, 6.5%-62.5% = first bit, 62.5%-100% = second bit.
     uint32_t sync_time = args[0].u_int ? args[0].u_int : BIT_TIME / 4U;
     uint32_t split_time = args[1].u_int ? args[1].u_int : (BIT_TIME * 5U) / 8U;
-    uint32_t sync_time_fd = args[2].u_int ? args[0].u_int : BIT_TIME_FD / 4U;
-    uint32_t split_time_fd = args[3].u_int ? args[1].u_int : (BIT_TIME_FD * 5U) / 8U;
+    uint32_t sync_time_fd = args[2].u_int ? args[2].u_int : BIT_TIME_FD / 4U;
+    uint32_t split_time_fd = args[3].u_int ? args[3].u_int : (BIT_TIME_FD * 5U) / 8U;
     uint32_t timeout = args[4].u_int;
     uint32_t retries = args[5].u_int;
 
@@ -497,8 +497,8 @@ STATIC mp_obj_t rp2_canhack_spoof_frame(mp_uint_t n_args, const mp_obj_t *pos_ar
     bool overwrite = args[1].u_bool;
     uint32_t sync_time = args[2].u_int ? args[2].u_int : BIT_TIME / 4U;
     uint32_t split_time = args[3].u_int ? args[3].u_int : (BIT_TIME * 5U) / 8U;
-    uint32_t sync_time_fd = args[4].u_int ? args[2].u_int : BIT_TIME_FD / 4U;
-    uint32_t split_time_fd = args[5].u_int ? args[3].u_int : (BIT_TIME_FD * 5U) / 8U;
+    uint32_t sync_time_fd = args[4].u_int ? args[4].u_int : BIT_TIME_FD / 4U;
+    uint32_t split_time_fd = args[5].u_int ? args[5].u_int : (BIT_TIME_FD * 5U) / 8U;
     bool second = args[6].u_bool;
     uint32_t retries = args[7].u_int;
     uint32_t loopback_offset = args[8].u_int;

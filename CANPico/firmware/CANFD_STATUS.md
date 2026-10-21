@@ -32,8 +32,9 @@ can1 = observer), all confirmed working on CAN FD:
   BRS EOF-detection path, i.e. the `-= 1` fix).
 * `error_attack` — drove the victim's TX error counter up (ERROR-WARNING/PASSIVE); the victim's
   FD frames then carried ESI set (`candump` `E` flag), and error frames were injected.
-* `freeze_doom_loop_attack` — needed the 64-bit EOF-detection register fix below to work on BRS
-  frames (the 9-bit mask's 4× expansion is 36 bits).
+* `freeze_doom_loop_attack` — confirmed after the 64-bit EOF-detection fix below: on a flooded
+  bus (~17 k frames/s) `repeat=50` produced a clean ~3 ms bus freeze; a large `repeat` produced a
+  self-sustaining multi-second freeze. (Before the fix it had no effect on BRS frames.)
 
 ## TL;DR
 
@@ -93,7 +94,14 @@ firmware intends to put on the wire form a valid CAN FD frame.
    the effective mask/match to 64-bit. `error_attack` and `double_receive_attack` (masks that fit
    in 32 bits) are unaffected.
 
-4. **`CANPico/firmware/README.txt` — documented the `CANHACK_FD` build module.** It was present in
+4. **`CANPico/firmware/src/canis/rp2_canhack.c` — FD sync/split time argument bug.**
+   `send_janus_frame` (and `spoof_frame` for its Janus path) read the FD timing from the wrong
+   argument slot: `sync_time_fd` took `sync_time`'s value and `split_time_fd` took `split_time`'s.
+   Because the FD defaults are non-zero (31/78), `send_janus_frame` *always* used the nominal
+   50/155-cycle times in the 2 Mbit/s phase — and 155 > the 125-cycle fast bit, so FD Janus was
+   broken regardless of arguments. Fixed to read slots [2]/[3] (janus) and [4]/[5] (spoof).
+
+5. **`CANPico/firmware/README.txt` — documented the `CANHACK_FD` build module.** It was present in
    `CMakeLists.txt` but never written up, so the FD firmware could not be built from the docs
    alone. The build recipe for a plain Pico + transceiver is now included.
 
@@ -105,6 +113,10 @@ any change there needs a scope to validate, so it is left for hardware bring-up.
 * **Janus attack on CAN FD** is inherently marginal: in the 2 Mbit/s phase the sync→split window
   is only ~47 cycles, below what the thesis already found unreliable. Expect occasional
   error-flagged Janus frames in the data phase. The classical-CAN Janus attack is unaffected.
+  NOTE: a separate argument-parsing bug that forced the FD sync/split times to the nominal
+  (50/155-cycle) values — which are longer than a whole 125-cycle fast bit, so FD Janus could not
+  work at all — was fixed in `rp2_canhack.c` (see fix 5). Re-test FD Janus on hardware before
+  judging how marginal it really is.
 * **Data-phase execution headroom.** Even at 1.20 V / 250 MHz the `send_bits` fast loop must do
   `SET_CAN_TX` + bookkeeping within 125 cycles. The nested-loop structure already minimises this;
   if the scope shows jitter on data-phase edges, that is the limit being hit.
