@@ -14,7 +14,7 @@ print("sys freq:", machine.freq())
 
 # 1) Create the toolkit. Argument is the ARBITRATION bit rate in kbit/s.
 #    500 -> 2 Mbit/s data, 250 -> 1 Mbit/s data, 125 -> 500 kbit/s data.
-ch = rp2.CANHack(500)
+ch = rp2.CANHack(bit_rate=500)
 
 # 2) Build a CAN FD frame (standard ID, BRS on -> fast data phase, ESI error-active).
 ch.set_frame(0x123, data=bytes([0x01, 0x02, 0x03, 0x04,

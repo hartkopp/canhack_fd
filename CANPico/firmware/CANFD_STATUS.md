@@ -91,7 +91,7 @@ physical pin 29, which is cleaner to trigger on).
    import machine
    print(machine.freq())        # expect 250000000
    import rp2
-   ch = rp2.CANHack(500)        # 500 kbit/s arbitration -> 2 Mbit/s data
+   ch = rp2.CANHack(bit_rate=500)        # 500 kbit/s arbitration -> 2 Mbit/s data
    ```
 2. **Builder sanity (no bus needed).**
    ```python
