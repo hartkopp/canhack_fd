@@ -34,6 +34,12 @@ command -v arm-none-eabi-gcc >/dev/null 2>&1 || {
     exit 1
 }
 
+# The host tool mpy-cross is built with the native compiler. Very new host GCCs
+# (>= 15) turn new warnings into errors on MicroPython v1.22.2's own sources, so
+# relax -Werror for the host build. Harmless for the ARM target build (cmake-driven,
+# does not read CFLAGS_EXTRA). Override by exporting CFLAGS_EXTRA yourself.
+export CFLAGS_EXTRA="${CFLAGS_EXTRA:--Wno-error}"
+
 if [ ! -d "$RP2" ]; then
     echo "error: MicroPython not found at $MPY_DIR" >&2
     echo "  run:  git submodule update --init CANPico/firmware/micropython" >&2
