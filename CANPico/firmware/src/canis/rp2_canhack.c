@@ -761,9 +761,35 @@ STATIC mp_obj_t rp2_canhack_send_raw(mp_obj_t self_in)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(rp2_canhack_send_raw_obj, rp2_canhack_send_raw);
 
+// Report the firmware build stamp and canhack_fd git hash (uname-like), e.g.
+//   >>> ch.build_info()
+//   'canhack_fd g1a2b3c4 built 2026-10-21 14:59:12 UTC'
+#ifndef CANHACK_FD_BUILD_UTC
+#define CANHACK_FD_BUILD_UTC "unknown"
+#endif
+#ifndef CANHACK_FD_GITHASH
+#define CANHACK_FD_GITHASH "unknown"
+#endif
+STATIC mp_obj_t rp2_canhack_build_info(mp_obj_t self_in)
+{
+    (void)self_in;
+    char buf[96];
+    int n = snprintf(buf, sizeof(buf), "canhack_fd %s built %s UTC",
+                     CANHACK_FD_GITHASH, CANHACK_FD_BUILD_UTC);
+    if (n < 0) {
+        n = 0;
+    }
+    if (n > (int)sizeof(buf) - 1) {
+        n = (int)sizeof(buf) - 1;
+    }
+    return mp_obj_new_str(buf, (size_t)n);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(rp2_canhack_build_info_obj, rp2_canhack_build_info);
+
 
 STATIC const mp_map_elem_t rp2_canhack_locals_dict_table[] = {
         // instance methods
+        { MP_OBJ_NEW_QSTR(MP_QSTR_build_info), (mp_obj_t)&rp2_canhack_build_info_obj },
         { MP_OBJ_NEW_QSTR(MP_QSTR_init), (mp_obj_t)&rp2_canhack_init_obj },
         { MP_OBJ_NEW_QSTR(MP_QSTR_stop), (mp_obj_t)&rp2_canhack_stop_obj },
         { MP_OBJ_NEW_QSTR(MP_QSTR_set_frame), (mp_obj_t)&rp2_canhack_set_frame_obj },

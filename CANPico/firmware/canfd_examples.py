@@ -16,6 +16,9 @@ print("sys freq:", machine.freq())
 #    500 -> 2 Mbit/s data, 250 -> 1 Mbit/s data, 125 -> 500 kbit/s data.
 ch = rp2.CANHack(bit_rate=500)
 
+# Identify the running firmware (uname-like): git hash + build timestamp.
+print(ch.build_info())        # e.g. 'canhack_fd g1a2b3c4 built 2026-10-21 14:59:12 UTC'
+
 # 2) Build a CAN FD frame (standard ID, BRS on -> fast data phase, ESI error-active).
 ch.set_frame(0x123, data=bytes([0x01, 0x02, 0x03, 0x04,
                                 0x05, 0x06, 0x07, 0x08]),

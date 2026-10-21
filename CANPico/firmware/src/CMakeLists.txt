@@ -124,8 +124,22 @@ endif()
 
 if (EXISTS CANHACK_FD)
     message(STATUS "CANHACK_FD")
+    # Build stamp (UTC, with seconds) captured at configure time -- do a clean
+    # configure (rm -rf build-<board>) to refresh it. The canhack_fd git hash is
+    # taken from the CANHACK_FD_GITHASH environment variable because the build runs
+    # in the MicroPython tree, not the canhack_fd checkout; set it before building:
+    #   export CANHACK_FD_GITHASH="$(git -C <canhack_fd> rev-parse --short HEAD)"
+    string(TIMESTAMP CANHACK_FD_BUILD_UTC "%Y-%m-%d %H:%M:%S" UTC)
+    if (DEFINED ENV{CANHACK_FD_GITHASH})
+        set(CANHACK_FD_GITHASH "$ENV{CANHACK_FD_GITHASH}")
+    else()
+        set(CANHACK_FD_GITHASH "unknown")
+    endif()
+    message(STATUS "CANHACK_FD build ${CANHACK_FD_BUILD_UTC} UTC  git ${CANHACK_FD_GITHASH}")
     target_compile_definitions(${MICROPY_TARGET} PRIVATE
         CANHACK_FD=1
+        CANHACK_FD_BUILD_UTC="${CANHACK_FD_BUILD_UTC}"
+        CANHACK_FD_GITHASH="${CANHACK_FD_GITHASH}"
     )
 endif()
 
