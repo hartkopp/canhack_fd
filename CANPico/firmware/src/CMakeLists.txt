@@ -568,7 +568,6 @@ target_sources(${MICROPY_TARGET} PRIVATE
     ${MICROPY_SOURCE_LIB}
     ${MICROPY_SOURCE_DRIVERS}
     ${MICROPY_SOURCE_PORT}
-${MIN_SOURCE_LIB}
 )
 
 target_link_libraries(${MICROPY_TARGET} micropy_lib_mbedtls)
